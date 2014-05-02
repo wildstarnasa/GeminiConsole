@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-<Addon Author="draftomatic" APIVersion="7" Name="GeminiConsole" Description="">
+<Addon Author="draftomatic" APIVersion="8" Name="GeminiConsole" Description="">
     <Script Name="drafto_LuaUtils.lua"/>
     <Script Name="inspect.lua"/>
     <Script Name="GeminiConsole.lua"/>
