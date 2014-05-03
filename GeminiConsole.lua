@@ -8,7 +8,7 @@
 -- If a line starts with "=" the rest of the line is evaluated as an expression and the result is printed.
 -- There are two types of errors that can happen: parse and execute.
 -----------------------------------------------------------------------------------------------
-local VERSION = "1.2.1"
+local VERSION = "1.2.3"
 
 local GeminiConsole = {}
 
@@ -30,6 +30,9 @@ function GeminiConsole:new(o)
     self.__index = self
 
 	-- For keeping track of command history
+	self.bDocLoaded = false
+	self.bRestored = false
+	self.tRestoreData = nil
 	self.cmdHistory = {}
 	self.cmdHistoryIndex = 1
 	self.nonMarkupText = ""
@@ -59,8 +62,20 @@ function GeminiConsole:OnLoad()
 	Queue = Apollo.GetPackage("Drafto:Lib:Queue-1.2").tPackage
 	JScanBot = Apollo.GetAddon("JScanBot")
 
-	-- Load Window
+	-- Line buffer
+	self.lineQueue = Queue.new()
+	Apollo.CreateTimer("LineQueueTimer", 0.001, true)
+	Apollo.RegisterTimerHandler("LineQueueTimer", "OnLineQueueTimer", self)
+	
+	-- Register xml load callback
+	-- See discussion here: https://github.com/wildstarnasa/GeminiConsole/issues/1
 	self.xmlMain = XmlDoc.CreateFromFile("GeminiConsole.xml")
+	self.xmlMain:RegisterCallback("OnDocLoaded", self)
+end
+
+function GeminiConsole:OnDocLoaded()
+
+	-- Load main window
 	self.wndMain = Apollo.LoadForm(self.xmlMain, "GeminiConsoleWindow", nil, self)
 
 	-- Find Window components
@@ -84,11 +99,6 @@ function GeminiConsole:OnLoad()
 	--Apollo.RegisterSlashCommand("lua", "OnLuaSlashCommand", self)
 	--Apollo.RegisterEventHandler("KeyDown", "OnKeyDown", self)
 
-	-- Line buffer
-	self.lineQueue = Queue.new()
-	Apollo.CreateTimer("LineQueueTimer", 0.001, true)
-	Apollo.RegisterTimerHandler("LineQueueTimer", "OnLineQueueTimer", self)
-
 	-- FPS update timer
 	Apollo.CreateTimer("FPSTimer", 1.5, true)
 	Apollo.RegisterTimerHandler("FPSTimer", "OnFPSTimer", self)
@@ -102,6 +112,12 @@ function GeminiConsole:OnLoad()
 	--GeminiInterface = g
 	--GeminiInterface.AddUserToggle("GeminiConsole_Button", "GeminiConsole", "CRB_Basekit:kitIcon_Holo_HazardProximity", "GeminiConsole_ButtonClick", false)
 
+	if self.bRestored == false and self.tRestoreData ~= nil then
+		self:UpdateFromRestore(self.tRestoreData)
+	end
+	
+	self.bDocLoaded = true
+	
 end
 
 function GeminiConsole:OnDependencyError(strDep, strError)
@@ -149,10 +165,21 @@ function GeminiConsole:OnSave(eLevel)
 		tConfig = self.tConfig
 	}
 end
+
 function GeminiConsole:OnRestore(eLevel, tData)
 	if eLevel ~= GameLib.CodeEnumAddonSaveLevel.General then return nil end
 	if not tData or not tData.VERSION == VERSION then return end
-	self.wndMain:Show(tData.bVisible)
+	
+	if self.bDocLoaded then
+		self:UpdateFromRestore(tData)
+	else
+		self.tRestoreData = tData
+	end
+end
+
+function GeminiConsole:UpdateFromRestore(tData)
+	self.wndMain:Show(tData.bVisible == true)
+	--self.wndMain:Show(true)
 	if tData.tAnchorPoints then
 		self.wndMain:SetAnchorPoints(unpack(tData.tAnchorPoints))
 	end
@@ -166,6 +193,8 @@ function GeminiConsole:OnRestore(eLevel, tData)
 	if tData.tConfig then
 		self:UpdateConfig(tData.tConfig)
 	end
+	
+	self.bRestored = true
 end
 
 -- Appends text to the console with given color (or default color) and newline
@@ -216,7 +245,7 @@ function GeminiConsole:Append(text, color, bSupressNewline)
 end
 
 function GeminiConsole:OnLineQueueTimer()
-	if Queue.Size(self.lineQueue) > 0 then
+	if self.bDocLoaded == true and Queue.Size(self.lineQueue) > 0 then
 		self:AddLine(Queue.PopRight(self.lineQueue))
 	end
 end
