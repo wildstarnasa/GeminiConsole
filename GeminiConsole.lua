@@ -574,7 +574,8 @@ function GeminiConsole:OnHideConfig(wndHandler, wndControl)
 end
 
 function GeminiConsole:OnFPSTimer()
-	self.wndFPS:SetText(GameLib.GetFrameRate())
+	local mult = 10^3
+	self.wndFPS:SetText(math.floor(GameLib.GetFrameRate() * mult + 0.5) / mult)
 end
 
 
