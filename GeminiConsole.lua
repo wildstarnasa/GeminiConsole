@@ -260,7 +260,7 @@ function GeminiConsole:AddLine(sLine)
 	--Print(sLine)
 	local lineItem = Apollo.LoadForm(self.xmlMain, "LineItem", self.wndConsole, self)
 	local xml = XmlDoc.new()
-	xml:AddLine(sLine, ApolloColor.new("white"), "Courier", "Left")
+	xml:AddLine(sLine, ApolloColor.new("white"), "Nameplates", "Left")
 	lineItem:SetDoc(xml)
 	lineItem:SetHeightToContentHeight()
 	
