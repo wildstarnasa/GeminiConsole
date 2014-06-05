@@ -586,7 +586,7 @@ end
 -----------------------------------------------------------------------------------------------
 -- GeminiConsole Instance
 -----------------------------------------------------------------------------------------------
-GeminiConsoleInst = GeminiConsole:new()
+local GeminiConsoleInst = GeminiConsole:new()
 GeminiConsoleInst:Init()
 
 
