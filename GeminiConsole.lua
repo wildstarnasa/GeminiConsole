@@ -433,12 +433,45 @@ function GeminiConsole:Submit(strText, bEcho)
 				if type(inspectCallResult) == "userdata" then
 					inspectCallResult = getmetatable(inspectCallResult)
 				end
-				self:Append(inspect(inspectCallResult,{depth=limit},rawinspectCallResult), kstrColorInspect)		-- Inspect and print
+
+				self.lastresult = inspect(inspectCallResult,{depth=limit},rawinspectCallResult)
+				self:Append(self.lastresult, kstrColorInspect)		-- Inspect and print
 			end
 		end
 
 
 		self.wndInput:SetFocus()
+		return
+
+	-- find command
+	elseif LuaUtils:StartsWith(sInput, "find") then
+		if self.lastresult then
+			local needle = sInput:match("^%S+%s+(.*)")
+			self:Append("Finding: "..needle,kstrColorDefault)
+			self:Append("in: "..self.lastresult:sub(1,30).."...",kstrColorDefault)
+			for line in self.lastresult:gmatch("([^\n]*"..needle.."[^\n]*)\n") do
+				self:Append(line,kstrColorInspect)
+			end
+		else
+			self:Append("No last result.", kstrColorError)
+		end
+		return
+
+	elseif LuaUtils:StartsWith(sInput, "set") then
+		local var,val = sInput:match("set (.-) (.*)")
+		if var and val then
+			val = tonumber(val) or val
+			if var=="call" then
+				inspect.cfg_callfuncs = (val==1) or (val=="on")
+				self:Append("Call functions: "..(inspect.cfg_callfuncs and "ON" or "OFF"), kstrColorDefault)
+			else
+				self:Append("Unknown variable.", kstrColorError)
+			end
+		else
+			self:Append("set <variable> <value>", kstrColorError)
+			self:Append("Variables:", kstrColorError)
+			self:Append("  call ("..(inspect.cfg_callfuncs and "ON" or "OFF")..")   -- automatically expand Get* and Is* functions", kstrColorError)
+		end
 		return
 
 	-- Slash Commands
@@ -586,7 +619,7 @@ end
 -----------------------------------------------------------------------------------------------
 -- GeminiConsole Instance
 -----------------------------------------------------------------------------------------------
-local GeminiConsoleInst = GeminiConsole:new()
+GeminiConsoleInst = GeminiConsole:new()
 GeminiConsoleInst:Init()
 
 

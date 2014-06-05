@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------------------------------------------
 -- inspect.lua - v2.0.0 (2013-01)
--- Enrique García Cota - enrique.garcia.cota [AT] gmail [DOT] com
+-- Enrique Garcï¿½a Cota - enrique.garcia.cota [AT] gmail [DOT] com
 -- human-readable representations of tables.
 -- inspired by http://lua-users.org/wiki/TableSerialization
 -- Edited for WildStar by draftomatic
@@ -13,7 +13,7 @@ local inspect ={
   _LICENSE = [[
     MIT LICENSE
 
-    Copyright (c) 2013 Enrique García Cota
+    Copyright (c) 2013 Enrique Garcï¿½a Cota
 
     Permission is hereby granted, free of charge, to any person obtaining a
     copy of this software and associated documentation files (the
@@ -155,7 +155,6 @@ end
 
 -------------------------------------------------------------------
 function inspect.inspect(rootObject, options, rawrootObject)
-  --rawrootObject is the userdata if rootObject is actually a metatable of userdata
   options       = options or {}
   local depth   = options.depth or math.huge
   local filter  = parse_filter(options.filter or {})
@@ -276,7 +275,8 @@ function inspect.inspect(rootObject, options, rawrootObject)
     else
       local tv = type(v)
 
-      if tv=="function"
+			if inspect.cfg_callfuncs
+			and tv=="function"
 			--and vparent~=GameLib and vparent~=_G
 			and vname and (vname:match("^Get") or vname:match("^Is")) then
         local ok,ret = pcall(v,vparent)
