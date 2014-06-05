@@ -429,10 +429,11 @@ function GeminiConsole:Submit(strText, bEcho)
 				self:Append(inspectCallResult)
 			else
 				-- Use metatable for userdata
+				local rawinspectCallResult = inspectCallResult
 				if type(inspectCallResult) == "userdata" then
 					inspectCallResult = getmetatable(inspectCallResult)
 				end
-				self:Append(inspect(inspectCallResult,{depth=limit}), kstrColorInspect)		-- Inspect and print
+				self:Append(inspect(inspectCallResult,{depth=limit},rawinspectCallResult), kstrColorInspect)		-- Inspect and print
 			end
 		end
 
