@@ -408,7 +408,7 @@ function GeminiConsole:Submit(strText, bEcho)
 	then
 		local limit = sInput:match("<<(%d+)$")
 		if limit then sInput=sInput:gsub("%s*<<%d+$","") limit=tonumber(limit) end
-		sInput = string.gsub(sInput, "^i[nspect]* ", "return ")		-- trick to evaluate expressions. lua.c does the same thing.
+		sInput = string.gsub(sInput, "^i[nspect]* ", "return ")		-- trick to evalutate expressions. lua.c does the same thing.
 
 		--local inspectVar = _G[sInput]		-- Kind of a hack. Looks for global variables
 
@@ -579,15 +579,14 @@ function GeminiConsole:OnHideConfig(wndHandler, wndControl)
 end
 
 function GeminiConsole:OnFPSTimer()
-	local mult = 10^3
-	self.wndFPS:SetText(math.floor(GameLib.GetFrameRate() * mult + 0.5) / mult)
+	self.wndFPS:SetText(math.floor(GameLib.GetFrameRate() + 0.5))  -- who needs fractional FPS anyway?
 end
 
 
 -----------------------------------------------------------------------------------------------
 -- GeminiConsole Instance
 -----------------------------------------------------------------------------------------------
-local GeminiConsoleInst = GeminiConsole:new()
+GeminiConsoleInst = GeminiConsole:new()
 GeminiConsoleInst:Init()
 
 
