@@ -406,7 +406,8 @@ function GeminiConsole:Submit(strText, bEcho)
 	elseif LuaUtils:StartsWith(sInput, "inspect ")
 	    or LuaUtils:StartsWith(sInput, "i ")
 	then
-
+		local limit = sInput:match("<<(%d+)$")
+		if limit then sInput=sInput:gsub("%s*<<%d+$","") limit=tonumber(limit) end
 		sInput = string.gsub(sInput, "^i[nspect]* ", "return ")		-- trick to evaluate expressions. lua.c does the same thing.
 
 		--local inspectVar = _G[sInput]		-- Kind of a hack. Looks for global variables
@@ -431,7 +432,7 @@ function GeminiConsole:Submit(strText, bEcho)
 				if type(inspectCallResult) == "userdata" then
 					inspectCallResult = getmetatable(inspectCallResult)
 				end
-				self:Append(inspect(inspectCallResult), kstrColorInspect)		-- Inspect and print
+				self:Append(inspect(inspectCallResult,{depth=limit}), kstrColorInspect)		-- Inspect and print
 			end
 		end
 
