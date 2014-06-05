@@ -403,8 +403,11 @@ function GeminiConsole:Submit(strText, bEcho)
 		return
 
 	-- "inspect" special command
-	elseif LuaUtils:StartsWith(sInput, "inspect ") then
-		sInput = string.gsub(sInput, "inspect ", "return ")		-- trick to evalutate expressions. lua.c does the same thing.
+	elseif LuaUtils:StartsWith(sInput, "inspect ")
+	    or LuaUtils:StartsWith(sInput, "i ")
+	then
+
+		sInput = string.gsub(sInput, "^i[nspect]* ", "return ")		-- trick to evaluate expressions. lua.c does the same thing.
 
 		--local inspectVar = _G[sInput]		-- Kind of a hack. Looks for global variables
 
