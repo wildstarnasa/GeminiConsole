@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------------------------------------------
 -- inspect.lua - v2.0.0 (2013-01)
--- Enrique García Cota - enrique.garcia.cota [AT] gmail [DOT] com
+-- Enrique Garcï¿½a Cota - enrique.garcia.cota [AT] gmail [DOT] com
 -- human-readable representations of tables.
 -- inspired by http://lua-users.org/wiki/TableSerialization
 -- Edited for WildStar by draftomatic
@@ -13,7 +13,7 @@ local inspect ={
   _LICENSE = [[
     MIT LICENSE
 
-    Copyright (c) 2013 Enrique García Cota
+    Copyright (c) 2013 Enrique Garcï¿½a Cota
 
     Permission is hereby granted, free of charge, to any person obtaining a
     copy of this software and associated documentation files (the
@@ -154,7 +154,7 @@ local function parse_filter(filter)
 end
 
 -------------------------------------------------------------------
-function inspect.inspect(rootObject, options)
+function inspect.inspect(rootObject, options, rawrootObject)
   options       = options or {}
   local depth   = options.depth or math.huge
   local filter  = parse_filter(options.filter or {})
@@ -214,13 +214,13 @@ function inspect.inspect(rootObject, options)
     puts("]")
   end
 
-  local function putTable(t)
+  local function putTable(t,vparent)
     if alreadyVisited(t) then
       puts('<table ', getId(t), '>')
     elseif level >= depth then
       puts('{...}')
     else
-      if tableAppearances[t] > 1 then puts('<', getId(t), '>') end
+      if tableAppearances[t] and tableAppearances[t] > 1 then puts('<', getId(t), '>') end
 
       local dictKeys          = getDictionaryKeys(t)
       local length            = #t
@@ -246,14 +246,14 @@ function inspect.inspect(rootObject, options)
           tabify()
           putKey(k)
           puts(' = ')
-          putValue(t[k])
+          putValue(t[k],k,vparent)
         end
 
         if mt then
           needsComma = commaControl(needsComma)
           tabify()
           puts('<metatable> = ')
-          putValue(mt)
+          putValue(mt,nil,vparent)
         end
       end)
 
@@ -269,26 +269,35 @@ function inspect.inspect(rootObject, options)
   end
 
   -- putvalue is forward-declared before putTable & putKey
-  putValue = function(v)
+  putValue = function(v,vname,vparent)
     if filter(v) then
       puts('<filtered>')
     else
       local tv = type(v)
+
+			if inspect.cfg_callfuncs
+			and tv=="function"
+			--and vparent~=GameLib and vparent~=_G
+			and vname and (vname:match("^Get") or vname:match("^Is")) then
+        local ok,ret = pcall(v,vparent)
+        v = ret
+        tv = type(v)
+      end
 
       if tv == 'string' then
         puts(smartQuote(escape(v)))
       elseif tv == 'number' or tv == 'boolean' or tv == 'nil' then
         puts(tostring(v))
       elseif tv == 'table' then
-        putTable(v)
+        putTable(v,vparent)
       else
         puts('<',tv,' ',getId(v),'>')
       end
     end
   end
-
-  putValue(rootObject)
-
+  
+  putValue(rootObject,nil,rawrootObject)
+  
   return table.concat(buffer)
 end
 

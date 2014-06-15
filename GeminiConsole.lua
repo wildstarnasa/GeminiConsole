@@ -260,7 +260,7 @@ function GeminiConsole:AddLine(sLine)
 	--Print(sLine)
 	local lineItem = Apollo.LoadForm(self.xmlMain, "LineItem", self.wndConsole, self)
 	local xml = XmlDoc.new()
-	xml:AddLine(sLine, ApolloColor.new("white"), "Courier", "Left")
+	xml:AddLine(sLine, ApolloColor.new("white"), "Nameplates", "Left")
 	lineItem:SetDoc(xml)
 	lineItem:SetHeightToContentHeight()
 	
@@ -403,8 +403,12 @@ function GeminiConsole:Submit(strText, bEcho)
 		return
 
 	-- "inspect" special command
-	elseif LuaUtils:StartsWith(sInput, "inspect ") then
-		sInput = string.gsub(sInput, "inspect ", "return ")		-- trick to evalutate expressions. lua.c does the same thing.
+	elseif LuaUtils:StartsWith(sInput, "inspect ")
+	    or LuaUtils:StartsWith(sInput, "i ")
+	then
+		local limit = sInput:match("<<(%d+)$")
+		if limit then sInput=sInput:gsub("%s*<<%d+$","") limit=tonumber(limit) end
+		sInput = string.gsub(sInput, "^i[nspect]* ", "return ")		-- trick to evalutate expressions. lua.c does the same thing.
 
 		--local inspectVar = _G[sInput]		-- Kind of a hack. Looks for global variables
 
@@ -425,15 +429,49 @@ function GeminiConsole:Submit(strText, bEcho)
 				self:Append(inspectCallResult)
 			else
 				-- Use metatable for userdata
+				local rawinspectCallResult = inspectCallResult
 				if type(inspectCallResult) == "userdata" then
 					inspectCallResult = getmetatable(inspectCallResult)
 				end
-				self:Append(inspect(inspectCallResult), kstrColorInspect)		-- Inspect and print
+
+				self.lastresult = inspect(inspectCallResult,{depth=limit},rawinspectCallResult)
+				self:Append(self.lastresult, kstrColorInspect)		-- Inspect and print
 			end
 		end
 
 
 		self.wndInput:SetFocus()
+		return
+
+	-- find command
+	elseif LuaUtils:StartsWith(sInput, "find") then
+		if self.lastresult then
+			local needle = sInput:match("^%S+%s+(.*)")
+			self:Append("Finding: "..needle,kstrColorDefault)
+			self:Append("in: "..self.lastresult:sub(1,30).."...",kstrColorDefault)
+			for line in self.lastresult:gmatch("([^\n]*"..needle.."[^\n]*)\n") do
+				self:Append(line,kstrColorInspect)
+			end
+		else
+			self:Append("No last result.", kstrColorError)
+		end
+		return
+
+	elseif LuaUtils:StartsWith(sInput, "set") then
+		local var,val = sInput:match("set (.-) (.*)")
+		if var and val then
+			val = tonumber(val) or val
+			if var=="call" then
+				inspect.cfg_callfuncs = (val==1) or (val=="on")
+				self:Append("Call functions: "..(inspect.cfg_callfuncs and "ON" or "OFF"), kstrColorDefault)
+			else
+				self:Append("Unknown variable.", kstrColorError)
+			end
+		else
+			self:Append("set <variable> <value>", kstrColorError)
+			self:Append("Variables:", kstrColorError)
+			self:Append("  call ("..(inspect.cfg_callfuncs and "ON" or "OFF")..")   -- automatically expand Get* and Is* functions", kstrColorError)
+		end
 		return
 
 	-- Slash Commands
@@ -574,15 +612,14 @@ function GeminiConsole:OnHideConfig(wndHandler, wndControl)
 end
 
 function GeminiConsole:OnFPSTimer()
-	local mult = 10^3
-	self.wndFPS:SetText(math.floor(GameLib.GetFrameRate() * mult + 0.5) / mult)
+	self.wndFPS:SetText(math.floor(GameLib.GetFrameRate() + 0.5))  -- who needs fractional FPS anyway?
 end
 
 
 -----------------------------------------------------------------------------------------------
 -- GeminiConsole Instance
 -----------------------------------------------------------------------------------------------
-local GeminiConsoleInst = GeminiConsole:new()
+GeminiConsoleInst = GeminiConsole:new()
 GeminiConsoleInst:Init()
 
 
