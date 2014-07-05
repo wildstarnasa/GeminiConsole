@@ -74,6 +74,8 @@ function GeminiConsole:OnLoad()
 end
 
 function GeminiConsole:OnDocLoaded()
+	Apollo.RegisterEventHandler("InterfaceMenuListHasLoaded", 	"OnInterfaceMenuListHasLoaded", self)
+	Apollo.RegisterEventHandler("ToggleGeminiConsole", "ConsoleShowToggle", self)
 
 	-- Load main window
 	self.wndMain = Apollo.LoadForm(self.xmlMain, "GeminiConsoleWindow", nil, self)
@@ -118,6 +120,10 @@ function GeminiConsole:OnDocLoaded()
 	
 	self.bDocLoaded = true
 	
+end
+
+function GeminiConsole:OnInterfaceMenuListHasLoaded()
+	Event_FireGenericEvent("InterfaceMenuList_NewAddOn", "GeminiConsole", {"ToggleGeminiConsole", "", "Icon_Windows32_UI_CRB_InterfaceMenu_NonCombatAbility"})
 end
 
 function GeminiConsole:OnDependencyError(strDep, strError)
