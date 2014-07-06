@@ -89,7 +89,7 @@ function GeminiConsole:OnDocLoaded()
 	self.wndFPS = self.wndMain:FindChild("FPS")
 
 	self.wndConfig = self.wndMain:FindChild("ConfigWrapper")
-	self.wndConfig:Show(false)
+	self.wndConfig:Show(false,true)
 	self.wndUseJSB = self.wndMain:FindChild("UseJSB")
 	self.wndJSBPath = self.wndMain:FindChild("JSBPath")
 	self.wndJSBAppend = self.wndMain:FindChild("JSBAppend")
@@ -139,9 +139,9 @@ end
 -- toggle console display (triggered by SlashCommand "/lua" and the GeminiInterface button)
 function GeminiConsole:ConsoleShowToggle()
 	if self.wndMain:IsShown() then
-		self.wndMain:Show(false)
+		self.wndMain:Show(false,true)
 	else
-		self.wndMain:Show(true)
+		self.wndMain:Show(true,true)
 		self.wndInput:SetFocus()
 
 		-- Reset badge count
