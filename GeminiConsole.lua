@@ -23,6 +23,18 @@ local kstrColorDefault = "FFFFFFFF"
 local kstrColorError = "FFD12424"
 local kstrColorInspect = "FF5AAFFA"
 
+-- Upvalues
+local setmetatable, tostring, unpack = setmetatable, tostring, unpack
+local strfind, strgmatch, strformat = string.find, string.gmatch, string.format
+local strgsub, strsub, tinsert = string.gsub, string.sub, table.insert
+local tonumber, loadstring, pcall = tonumber, loadstring, pcall
+local type, getmetatable, floor = type, getmetatable, math.floor
+
+local Apollo, GameLib, Print, XmlDoc = Apollo, GameLib, Print, XmlDoc
+local ApolloColor, ChatSystemLib = ApolloColor, ChatSystemLib
+
+-- GLOBALS: ExitGame, ExitNow, RequestReloadUI
+
 -- Initialization
 function GeminiConsole:new(o)
     o = o or {}
@@ -212,13 +224,13 @@ function GeminiConsole:Append(text, color, bSupressNewline)
 	-- Clip text to account for bug that crashes the game if string is too big
 	--local maxText = 30000
 	--if #newText > maxText then
-		--newText = string.sub(newText, #newText - maxText, #newText)
+		--newText = strsub(newText, #newText - maxText, #newText)
 	--end
 
 	-- Split multiline text so that we can wrap each line in markup separately
-	if string.find(newText, "\n") then
+	if strfind(newText, "\n") then
 		local tempText = ""
-		for s in string.gmatch(newText, "[^\n]+") do
+		for s in strgmatch(newText, "[^\n]+") do
 			if #s > 0 then
 				if color then
 					s = LuaUtils:markupTextColor(s, color)
@@ -289,18 +301,18 @@ function GeminiConsole:AppendHelpText()
 	self:Append("Special commands:")
 	local specialCmdFormat1 = "%-16s"
 	local specialCmdFormat2 = "%-30s"
-	self:Append(string.format(specialCmdFormat1, "help"), color1, true)
-	self:Append(string.format(specialCmdFormat2, "Shows this help text."), nil)
-	self:Append(string.format(specialCmdFormat1, "= <expr>"), color1, true)
-	self:Append(string.format(specialCmdFormat2, "Evaluates <expr> and prints the result."), nil)
-	self:Append(string.format(specialCmdFormat1, "inspect <expr>"), color1, true)
-	self:Append(string.format(specialCmdFormat2, "Evaluates <expr> and recursively prints the result."), nil)
-	self:Append(string.format(specialCmdFormat1, "reload"), color1, true)
-	self:Append(string.format(specialCmdFormat2, "Reloads all addons (Reload UI)"), nil)
-	self:Append(string.format(specialCmdFormat1, "cls | clear"), color1, true)
-	self:Append(string.format(specialCmdFormat2, "Clears the console text."), nil)
-	self:Append(string.format(specialCmdFormat1, "quit | exit"), color1, true)
-	self:Append(string.format(specialCmdFormat2, "Exits WildStar."), nil)
+	self:Append(strformat(specialCmdFormat1, "help"), color1, true)
+	self:Append(strformat(specialCmdFormat2, "Shows this help text."), nil)
+	self:Append(strformat(specialCmdFormat1, "= <expr>"), color1, true)
+	self:Append(strformat(specialCmdFormat2, "Evaluates <expr> and prints the result."), nil)
+	self:Append(strformat(specialCmdFormat1, "inspect <expr>"), color1, true)
+	self:Append(strformat(specialCmdFormat2, "Evaluates <expr> and recursively prints the result."), nil)
+	self:Append(strformat(specialCmdFormat1, "reload"), color1, true)
+	self:Append(strformat(specialCmdFormat2, "Reloads all addons (Reload UI)"), nil)
+	self:Append(strformat(specialCmdFormat1, "cls | clear"), color1, true)
+	self:Append(strformat(specialCmdFormat2, "Clears the console text."), nil)
+	self:Append(strformat(specialCmdFormat1, "quit | exit"), color1, true)
+	self:Append(strformat(specialCmdFormat2, "Exits WildStar."), nil)
 	--self:Append("")
 	self:Append(stars, color2)
 	self:Append("")
@@ -365,12 +377,12 @@ function GeminiConsole:Submit(strText, bEcho)
 	end
 
 	-- Command will be executed, so add to history
-	table.insert(self.cmdHistory, sInput)
+	tinsert(self.cmdHistory, sInput)
 	self.cmdHistoryIndex = #self.cmdHistory + 1		-- Reset history index
 
 	-- Append command to console.
 	if bEcho then
-		self:Append("> " .. string.gsub(sInput, "\n", "\n> "))
+		self:Append("> " .. strgsub(sInput, "\n", "\n> "))
 	end
 
 	-- Check for special commands
@@ -408,7 +420,7 @@ function GeminiConsole:Submit(strText, bEcho)
 	then
 		local limit = sInput:match("<<(%d+)$")
 		if limit then sInput=sInput:gsub("%s*<<%d+$","") limit=tonumber(limit) end
-		sInput = string.gsub(sInput, "^i[nspect]* ", "return ")		-- trick to evalutate expressions. lua.c does the same thing.
+		sInput = strgsub(sInput, "^i[nspect]* ", "return ")		-- trick to evalutate expressions. lua.c does the same thing.
 
 		--local inspectVar = _G[sInput]		-- Kind of a hack. Looks for global variables
 
@@ -418,7 +430,7 @@ function GeminiConsole:Submit(strText, bEcho)
 		-- Execute
 		if inspectLoadResult == nil or inspectLoadError then		-- Parse error
 			self:Append("Error parsing expression:", kstrColorError)
-			self:Append(string.gsub(sInput, "return ", ""), kstrColorError)
+			self:Append(strgsub(sInput, "return ", ""), kstrColorError)
 		else
 
 			-- Run code in protected mode to catch runtime errors
@@ -482,7 +494,7 @@ function GeminiConsole:Submit(strText, bEcho)
 
 	-- Expression evaluation. Input starting with "=" will be evaluated and the result printed as a string.
 	elseif LuaUtils:StartsWith(sInput, "=") then
-		sInput = "return " .. string.sub(sInput, 2)			-- trick to evalutate expressions. lua.c does the same thing.
+		sInput = "return " .. strsub(sInput, 2)			-- trick to evalutate expressions. lua.c does the same thing.
 		isEcho = true
 	end
 
@@ -544,22 +556,8 @@ function GeminiConsole:ConsoleChanging( wndHandler, wndControl, strNewText, strO
 	self.wndConsole:SetText(strOldText)
 end
 
--- Saves the console text to the clipboard
--- Attempts to use JScanBot to save to a file if it's installed.
--- Otherwise uses a 2nd hidden EditBox since the main one uses class="MLWindow" which doesn't have the clipboard feature.
-function GeminiConsole:SaveToClipboard(wndHandler, wndControl, eMouseButton)
-	local tConfig = self.tConfig
-	if JScanBot and tConfig.bUseJSB and tConfig.strJSBPath ~= "" then
-		Print("Console saved to file: " .. tConfig.strJSBPath)
-		JScanBot:OpenFile(tConfig.strJSBPath, tConfig.bJSBAppend)
-		JScanBot:WriteToFile(tConfig.strJSBPath, self.nonMarkupText)
-		JScanBot:CloseFile(tConfig.strJSBPath)
-	else
-		self.wndClipboardWorkaround:SetText(self.nonMarkupText)
-		self.wndClipboardWorkaround:CopyTextToClipboard()
-		self.wndClipboardWorkaround:SetText("")
-		--self:Append("Console text copied to clipboard.", kstrColorInspect)
-	end
+function GeminiConsole:PrepareSaveToClipboard(wndHandler, wndControl)
+	self.wndMain:FindChild("SaveToClipboard"):SetActionData(GameLib.CodeEnumConfirmButtonType.CopyToClipboard, self.nonMarkupText)
 end
 
 function GeminiConsole:HistoryBackwardHidden( wndHandler, wndControl, eMouseButton )
@@ -612,14 +610,14 @@ function GeminiConsole:OnHideConfig(wndHandler, wndControl)
 end
 
 function GeminiConsole:OnFPSTimer()
-	self.wndFPS:SetText(math.floor(GameLib.GetFrameRate() + 0.5))  -- who needs fractional FPS anyway?
+	self.wndFPS:SetText(floor(GameLib.GetFrameRate() + 0.5))  -- who needs fractional FPS anyway?
 end
 
 
 -----------------------------------------------------------------------------------------------
 -- GeminiConsole Instance
 -----------------------------------------------------------------------------------------------
-GeminiConsoleInst = GeminiConsole:new()
+local GeminiConsoleInst = GeminiConsole:new()
 GeminiConsoleInst:Init()
 
 
