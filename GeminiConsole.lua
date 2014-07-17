@@ -86,6 +86,8 @@ function GeminiConsole:OnLoad()
 end
 
 function GeminiConsole:OnDocLoaded()
+	Apollo.RegisterEventHandler("InterfaceMenuListHasLoaded", 	"OnInterfaceMenuListHasLoaded", self)
+	Apollo.RegisterEventHandler("ToggleGeminiConsole", "ConsoleShowToggle", self)
 
 	-- Load main window
 	self.wndMain = Apollo.LoadForm(self.xmlMain, "GeminiConsoleWindow", nil, self)
@@ -99,7 +101,7 @@ function GeminiConsole:OnDocLoaded()
 	self.wndFPS = self.wndMain:FindChild("FPS")
 
 	self.wndConfig = self.wndMain:FindChild("ConfigWrapper")
-	self.wndConfig:Show(false)
+	self.wndConfig:Show(false,true)
 	self.wndUseJSB = self.wndMain:FindChild("UseJSB")
 	self.wndJSBPath = self.wndMain:FindChild("JSBPath")
 	self.wndJSBAppend = self.wndMain:FindChild("JSBAppend")
@@ -132,6 +134,10 @@ function GeminiConsole:OnDocLoaded()
 	
 end
 
+function GeminiConsole:OnInterfaceMenuListHasLoaded()
+	Event_FireGenericEvent("InterfaceMenuList_NewAddOn", "GeminiConsole", {"ToggleGeminiConsole", "", "Icon_Windows32_UI_CRB_InterfaceMenu_NonCombatAbility"})
+end
+
 function GeminiConsole:OnDependencyError(strDep, strError)
 	if strDep == "JScanBot" then
 		--Print("JScanBot not found, error: " .. strError)
@@ -145,9 +151,9 @@ end
 -- toggle console display (triggered by SlashCommand "/lua" and the GeminiInterface button)
 function GeminiConsole:ConsoleShowToggle()
 	if self.wndMain:IsShown() then
-		self.wndMain:Show(false)
+		self.wndMain:Show(false,true)
 	else
-		self.wndMain:Show(true)
+		self.wndMain:Show(true,true)
 		self.wndInput:SetFocus()
 
 		-- Reset badge count
