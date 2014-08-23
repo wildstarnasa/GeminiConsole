@@ -1,0 +1,5 @@
+package-as: GeminiConsole
+enable-nolib-creation: no
+
+ignore:
+  - README.md

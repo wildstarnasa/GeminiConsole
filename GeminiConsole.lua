@@ -8,7 +8,7 @@
 -- If a line starts with "=" the rest of the line is evaluated as an expression and the result is printed.
 -- There are two types of errors that can happen: parse and execute.
 -----------------------------------------------------------------------------------------------
-local VERSION = "1.2.3"
+local VERSION = "1.2.4"
 
 local GeminiConsole = {}
 
@@ -16,6 +16,8 @@ local GeminiInterface = nil
 local inspect
 local LuaUtils
 local Queue
+local QueueTimer
+local FPSTimer
 local JScanBot
 
 -- Constants
@@ -31,15 +33,15 @@ local tonumber, loadstring, pcall = tonumber, loadstring, pcall
 local type, getmetatable, floor = type, getmetatable, math.floor
 
 local Apollo, GameLib, Print, XmlDoc = Apollo, GameLib, Print, XmlDoc
-local ApolloColor, ChatSystemLib = ApolloColor, ChatSystemLib
+local ApolloColor, ApolloTimer, ChatSystemLib = ApolloColor, ApolloTimer, ChatSystemLib
 
 -- GLOBALS: ExitGame, ExitNow, RequestReloadUI
 
 -- Initialization
 function GeminiConsole:new(o)
-    o = o or {}
-    setmetatable(o, self)
-    self.__index = self
+	o = o or {}
+	setmetatable(o, self)
+	self.__index = self
 
 	-- For keeping track of command history
 	self.bDocLoaded = false
@@ -56,10 +58,10 @@ function GeminiConsole:new(o)
 		bJSBAppend = true
 	}
 		
-    return o
+	return o
 end
 function GeminiConsole:Init()
-    Apollo.RegisterAddon(self, false, "", {
+	Apollo.RegisterAddon(self, false, "", {
 		"Drafto:Lib:inspect-1.2", 
 		"Drafto:Lib:LuaUtils-1.2", 
 		"Drafto:Lib:Queue-1.2", 
@@ -76,8 +78,8 @@ function GeminiConsole:OnLoad()
 
 	-- Line buffer
 	self.lineQueue = Queue.new()
-	Apollo.CreateTimer("LineQueueTimer", 0.001, true)
-	Apollo.RegisterTimerHandler("LineQueueTimer", "OnLineQueueTimer", self)
+	QueueTimer = ApolloTimer.Create(0.001, true, "OnLineQueueTimer", self)
+	QueueTimer:Stop()
 	
 	-- Register xml load callback
 	-- See discussion here: https://github.com/wildstarnasa/GeminiConsole/issues/1
@@ -114,8 +116,8 @@ function GeminiConsole:OnDocLoaded()
 	--Apollo.RegisterEventHandler("KeyDown", "OnKeyDown", self)
 
 	-- FPS update timer
-	Apollo.CreateTimer("FPSTimer", 1.5, true)
-	Apollo.RegisterTimerHandler("FPSTimer", "OnFPSTimer", self)
+	FPSTimer = ApolloTimer.Create(1.5, true, "OnFPSTimer", self)
+	FPSTimer:Stop()
 	
 	-- Append initial help text
 	self:AppendHelpText()
@@ -151,9 +153,11 @@ end
 -- toggle console display (triggered by SlashCommand "/lua" and the GeminiInterface button)
 function GeminiConsole:ConsoleShowToggle()
 	if self.wndMain:IsShown() then
-		self.wndMain:Show(false,true)
+		self.wndMain:Show(false)
+		FPSTimer:Stop()
 	else
-		self.wndMain:Show(true,true)
+		self.wndMain:Show(true)
+		FPSTimer:Start()
 		self.wndInput:SetFocus()
 
 		-- Reset badge count
@@ -197,6 +201,10 @@ end
 
 function GeminiConsole:UpdateFromRestore(tData)
 	self.wndMain:Show(tData.bVisible == true)
+	if tData.bVisible then
+		FPSTimer:Start()
+	end
+
 	--self.wndMain:Show(true)
 	if tData.tAnchorPoints then
 		self.wndMain:SetAnchorPoints(unpack(tData.tAnchorPoints))
@@ -266,9 +274,15 @@ function GeminiConsole:OnLineQueueTimer()
 	if self.bDocLoaded == true and Queue.Size(self.lineQueue) > 0 then
 		self:AddLine(Queue.PopRight(self.lineQueue))
 	end
+	if Queue.Size(self.lineQueue) < 1 then
+		QueueTimer:Stop()
+	end
 end
 
 function GeminiConsole:QueueLine(sLine)
+	if Queue.Size(self.lineQueue) < 1 then
+		QueueTimer:Start()
+	end
 	Queue.PushLeft(self.lineQueue, sLine)
 end
 
@@ -549,6 +563,7 @@ end
 -- when the close button is clicked
 function GeminiConsole:OnCancel()
 	self.wndMain:Show(false) -- hide the window
+	FPSTimer:Stop()
 end
 
 -- when the reload button is clicked
@@ -625,5 +640,3 @@ end
 -----------------------------------------------------------------------------------------------
 local GeminiConsoleInst = GeminiConsole:new()
 GeminiConsoleInst:Init()
-
-
