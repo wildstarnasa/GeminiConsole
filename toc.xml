@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-<Addon Author="draftomatic" APIVersion="9" Name="GeminiConsole" Description="An in-game Lua console">
+<Addon Author="draftomatic" APIVersion="11" Name="GeminiConsole" Description="An in-game Lua console">
     <Script Name="drafto_LuaUtils.lua"/>
     <Script Name="inspect.lua"/>
     <Script Name="GeminiConsole.lua"/>
